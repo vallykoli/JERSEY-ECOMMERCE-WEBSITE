@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Shop - Elite Jerseys</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        .product-img {
+            transition: transform .4s ease;
+        }
+
+        .product-card:hover .product-img {
+            transform: scale(1.08);
+        }
+
+        .heart {
+            cursor: pointer;
+            transition: .3s;
+        }
+
+        .heart.active {
+            color: red;
+            transform: scale(1.3);
+        }
+
+        .modal {
+            display: none;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        #cartPanel {
+            transform: translateX(100%);
+            transition: transform .4s ease;
+        }
+
+        #cartPanel.active {
+            transform: translateX(0);
+        }
+
+        .success {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: black;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            display: none;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100">
+
+    <!-- Navbar -->
+    <div class="flex justify-between items-center p-6 bg-black text-white">
+        <h1 class="text-2xl font-bold">Shop Jerseys</h1>
+        <button onclick="toggleCart()">🛒 Cart (<span id="cartCount">0</span>)</button>
+    </div>
+
+    <!-- Filter -->
+    <div class="flex gap-3 p-6 flex-wrap">
+        <button onclick="filterClub('all')" class="bg-black text-white px-4 py-2 rounded-xl">All</button>
+        <button onclick="filterClub('Barcelona')" class="bg-gray-200 px-4 py-2 rounded-xl">Barcelona</button>
+        <button onclick="filterClub('RealMadrid')" class="bg-gray-200 px-4 py-2 rounded-xl">Real Madrid</button>
+        <button onclick="filterClub('ManchesterCity')" class="bg-gray-200 px-4 py-2 rounded-xl">Man City</button>
+        <button onclick="filterClub('Other')" class="bg-gray-200 px-4 py-2 rounded-xl">Others</button>
+    </div>
+
+    <!-- Products -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 p-6" id="productGrid"></div>
+
+    <!-- Quick View Modal -->
+    <div id="quickModal" class="modal fixed inset-0 bg-black bg-opacity-50 items-center justify-center">
+        <div class="bg-white p-6 rounded-2xl w-96">
+            <h2 id="quickTitle" class="text-xl font-bold"></h2>
+            <p id="quickPrice" class="text-gray-600 mt-2"></p>
+            <button onclick="closeQuickView()" class="mt-4 w-full bg-black text-white py-2 rounded-xl">Close</button>
+        </div>
+    </div>
+
+    <!-- Cart Panel -->
+    <div id="cartPanel" class="fixed right-0 top-0 w-80 h-full bg-white shadow-lg p-6">
+        <h2 class="text-xl font-bold mb-4">Your Cart</h2>
+        <div id="cartItems"></div>
+        <a href="checkout.html" class="block mt-4 bg-green-600 text-white text-center py-2 rounded-xl">
+            Checkout
+        </a>
+    </div>
+
+    <div id="successMsg" class="success">Added to Cart ✓</div>
+
+    <script>
+        const jerseys = [
+
+            { title: "Barcelona Home 24/25", price: 4999, club: "Barcelona", img: "images/barca-home.jpg" },
+
+            { title: "Real Madrid Home", price: 5299, club: "RealMadrid", img: "images/madrid-home.jpg" },
+
+            { title: "Man City Home", price: 4699, club: "ManchesterCity", img: "images/mancity.jpg" },
+
+            { title: "PSG Home", price: 4899, club: "Other", img: "images/psg.jpg" },
+            { title: "Liverpool Home", price: 4599, club: "Other", img: "images/liverpool.jpg" },
+            { title: "Arsenal Home", price: 4599, club: "Other", img: "images/arsenal.jpg" },
+            { title: "Chelsea Away", price: 4499, club: "Other", img: "images/chelsea.jpg" },
+            { title: "Man United Home", price: 4699, club: "Other", img: "images/manutd.jpg" }
+
+        ];
+        let cart = [];
+
+        function renderProducts() {
+            const grid = document.getElementById("productGrid");
+            grid.innerHTML = "";
+            jerseys.forEach(j => {
+                grid.innerHTML += `
+    <div class="product-card bg-white p-4 rounded-2xl shadow hover:shadow-xl transition"
+         data-club="${j.club}">
+      <div class="relative overflow-hidden rounded-xl">
+        <img src="${j.img}"
+             class="product-img w-full h-64 object-cover rounded-xl">
+        <span onclick="toggleWishlist(this)"
+              class="heart absolute top-3 right-3 text-2xl">♡</span>
+      </div>
+
+      <h2 class="mt-4 font-semibold">${j.title}</h2>
+      <p class="text-gray-500">₹${j.price}</p>
+
+      <div class="flex gap-2 mt-3">
+        <button onclick="openQuickView('${j.title}',${j.price})"
+                class="w-1/2 bg-gray-200 py-2 rounded-xl">Quick View</button>
+        <button onclick="addToCart('${j.title}',${j.price})"
+                class="w-1/2 bg-black text-white py-2 rounded-xl">Add</button>
+      </div>
+    </div>`;
+            });
+        }
+
+        function toggleWishlist(el) {
+            el.classList.toggle("active");
+            el.innerHTML = el.classList.contains("active") ? "♥" : "♡";
+        }
+
+        function openQuickView(title, price) {
+            document.getElementById("quickTitle").innerText = title;
+            document.getElementById("quickPrice").innerText = "₹" + price;
+            document.getElementById("quickModal").classList.add("active");
+        }
+
+        function closeQuickView() {
+            document.getElementById("quickModal").classList.remove("active");
+        }
+
+        function filterClub(club) {
+            const products = document.querySelectorAll(".product-card");
+            products.forEach(p => {
+                if (club === "all") { p.style.display = "block"; }
+                else { p.style.display = p.dataset.club === club ? "block" : "none"; }
+            });
+        }
+
+        function addToCart(title, price) {
+            cart.push({ title, price });
+            document.getElementById("cartCount").innerText = cart.length;
+
+            const item = document.createElement("p");
+            item.innerText = title + " - ₹" + price;
+            document.getElementById("cartItems").appendChild(item);
+
+            document.getElementById("successMsg").style.display = "block";
+            setTimeout(() => { document.getElementById("successMsg").style.display = "none"; }, 1500);
+        }
+
+        function toggleCart() {
+            document.getElementById("cartPanel").classList.toggle("active");
+        }
+
+        renderProducts();
+    </script>
+
+</body>
+
+</html>
